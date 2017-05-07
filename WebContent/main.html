@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8" />  
+	<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />  
+	<title>Focus</title>
+	<link rel="stylesheet" href="css/main.css"/>
+	<link rel="stylesheet" href="css/SearchControl_min.css" />
+	<link rel="stylesheet" href="css/ui-dialog.css"/>
+	<link rel="stylesheet" href="http://api.map.baidu.com/library/SearchInfoWindow/1.5/src/SearchInfoWindow_min.css" />
+	<script type="text/javascript" src="http://api.map.baidu.com/api?v=2.0&ak=G3uoeYnhYXCVY1s02G33vusdtwnYWYfc"></script>
+	<script type="text/javascript" src="http://api.map.baidu.com/library/Heatmap/2.0/src/Heatmap_min.js"></script>
+	<script src="js/jquery-3.1.1.min.js"></script>
+	<script type="text/javascript" src="js/SearchControl_min.js"></script>
+	<script type="text/javascript" src="js/SearchInfoWindow_min.js"></script>
+	<script type="text/javascript" src="js/dialog-min.js"></script>
+</head>
+<body>
+	<div id="header">
+		<a class="open-navigation ssm-open-nav" href="#" title="图例"><img class="logoicon" src="img/label.png" alt="lanel"></a>
+		<div class="logo">Spotlight</div>
+		<div id="test_container">
+      			<select id="selectType" name="" style="height:30px">
+          		<option value="1">本地搜索</option>
+          		<option value="2">公交方案</option>
+          		<option value="3">驾车路线</option>
+      			</select>
+      			<img class="contect" src="img/call.png" alt="contect" onclick="contextfunc()">
+ 		</div>	
+	</div>
+	<div>
+		<nav>
+			<div>
+			<button id="open">open</button>
+			<button id="close">close</button>
+			<br/><br/>
+			<form>
+				<label>类别：</label>
+				<select id="classification">
+				<option value="环境卫生">环境卫生</option>
+				<option value="公共设施">公共设施</option>
+				<option value="噪音扰民">噪音扰民</option>
+				<option value="治安管理">治安管理</option>
+				<option value="个人求助">个人求助</option>
+				</select>
+				<br/><br/>
+				<label style="vertical-align: top">事件：</label>
+				<textarea id="event" placeholder="请具体描述事件..."  required></textarea>
+				<br/><br/>
+				<label>地址：</label>
+				<input type="text" id="address"></input>
+				<br/><br/>
+				<button onclick="AddPoint()">添   加</button>
+			</form>
+			<hr/>
+			<br/>
+			<span style="font-wieght:bolder;">查询数据项：</span>
+			<select id="selectcal">
+				<option value=""></option>
+				<option value="环境卫生">环境卫生</option>
+				<option value="公共设施">公共设施</option>
+				<option value="噪音扰民">噪音扰民</option>
+				<option value="治安管理">治安管理</option>
+				<option value="个人求助">个人求助</option>
+			</select>
+			<button class="select" onclick="SearchData()">查  询</button>
+
+				<hr/>
+				查询周边事件情况:
+				<button class="select" onclick="selectStartPoint()" style="width: 90px;">选择起始点</button><span style="font-size: 0.8em">默认为定位点</span>
+				<br/>
+				<br/>
+				<input type="text" value="请输入查询半径" onfocus="if(this.value=='请输入查询半径')this.value=''"
+					   onblur="this.value=this.value==''?'请输入查询半径':this.value" id="radius">&nbsp;米
+				<p>查询类别：</p>
+				<select id="selectca2">
+					<option value=""></option>
+					<option value="环境卫生">环境卫生</option>
+					<option value="公共设施">公共设施</option>
+					<option value="噪音扰民">噪音扰民</option>
+					<option value="治安管理">治安管理</option>
+					<option value="个人求助">个人求助</option>
+				</select>
+				<button class="select" onclick="SearchSaptialData()">查  询</button>
+				<button class="select" onclick="ClearSearchData()"style="width:100px;">清除查询结果</button>
+				<hr/>
+				<br/>
+				热力图显示:
+				<p>显示类别：(默认为全部显示）</p>
+				<select id="selectca3">
+					<option value=""></option>
+					<option value="环境卫生">环境卫生</option>
+					<option value="公共设施">公共设施</option>
+					<option value="噪音扰民">噪音扰民</option>
+					<option value="治安管理">治安管理</option>
+					<option value="个人求助">个人求助</option>
+				</select>
+				<button class="select" onclick="openHeatmap()" style="width: 90px;">显示热力图</button>
+				<button class="select" onclick="closeHeatmap()" style="width: 90px;">关闭热力图</button>
+				<hr/>
+				前往事件点导航：
+				<button class="select" onclick="selectStartPoint()" style="width: 80px;">选择起始点</button>默认为定位点
+				<br>
+				<br>
+				<button class="select" onclick="selectPoint()" style="width: 80px;">选择前往点</button>
+				<button class="select" onclick="PlanRoute()">规划路径</button>
+				<button class="select" onclick="ClearRoute()">结束规划</button>
+				<div id="r-result">
+
+				</div>
+			</div>
+		</nav>
+	</div>
+	<div id="searchBox" style="width:400px;height:50px;position:fixed;right:0;margin-top:10px;margin-right:5px;z-index:5"></div>
+	<div id="container"> 
+		<div id="allmap"></div>
+	</div>
+	<div id="searchResultPanel" style="border:1px solid #C0C0C0;width:150px;height:auto; display:none;"></div>
+
+	<!-- touchSwipe library -->
+	<script src="js/jquery.touchswipe.min.js"></script>
+
+	<!-- Sliding swipe menu javascript file -->
+	<script src="js/jquery.slideandswipe.js"></script>
+	<script>
+    $(document).ready(function() {
+        $('nav').slideAndSwipe();
+    });
+	</script>
+	<script type="text/javascript"> 
+	// 百度地图API功能
+	function G(id) {
+		return document.getElementById(id);
+	}
+	var map = new BMap.Map("allmap");          // 创建地图实例  
+	var point = new BMap.Point(120.219,30.259);  // 创建点坐标  
+	map.centerAndZoom(point, 15);                 // 初始化地图，设置中心点坐标和地图级别  
+
+	//浏览器定位点，默认为初始化中心点
+    var geolocationPoint = point;
+    //根据浏览器定位
+    var geolocation = new BMap.Geolocation();
+    geolocation.getCurrentPosition(function(r){
+        if(this.getStatus() == BMAP_STATUS_SUCCESS){
+            var mk = new BMap.Marker(r.point);
+            geolocationPoint = r.point;
+           // alert(111);
+            map.addOverlay(mk);
+            map.panTo(r.point);
+        }
+        else {
+            alert('failed'+this.getStatus());
+        }
+    },{enableHighAccuracy: true});
+
+
+    map.addControl(new BMap.NavigationControl({anchor: BMAP_ANCHOR_TOP_LEFT, type: BMAP_NAVIGATION_CONTROL_SMALL,enableGeolocation: true})); // 缩放控件
+	map.addControl(new BMap.ScaleControl({anchor:BMAP_ANCHOR_BOTTOM_RIGHT}));      // 比例尺控件
+	map.addControl(new BMap.OverviewMapControl());// 缩略图
+	//map.addControl(new BMap.MapTypeControl());    // 
+	map.setCurrentCity("杭州"); // 仅当设置城市信息时，MapTypeControl的切换功能才能可用
+	map.enableScrollWheelZoom(true);     //开启鼠标滚轮缩放	
+
+	var type = "";
+	type = TRANSIT_ROUTE; //公交检索
+	type = DRIVING_ROUTE; //驾车检索
+	type = LOCAL_SEARCH ; //本地检索
+
+	//创建检索控件
+	var searchControl = new BMapLib.SearchControl({
+	    container : "searchBox" //存放控件的容器
+	    , map     : map  //关联地图对象
+	    , type    : type  //检索类型
+	});
+
+	document.getElementById("selectType").onchange = function () {
+	    searchControl.setType(this.value);
+	};
+    function contextfunc(){
+        var d = dialog({
+            title: '联系我们',
+            content: '对于添加的数据有任何反馈，请及时联系我们！感谢您对我们的支持！<br/>联系电话：21495900<br/>邮&emsp;&emsp;箱：focus@gmail.com<br/>办公地点：浙江大学东四409'
+        });
+        d.show();
+    }
+
+    //lbs云
+    var baseUrl = "http://api.map.baidu.com/geodata/v3/";
+    var baseSearchUrl = "http://api.map.baidu.com/geosearch/v3/";
+    var akServer= "gfj8FUXVx8ztKXh752w2ex478OErksLi";
+    var BDLBStableId = 160612;
+
+    //添加新的点
+    function AddPoint()
+    {
+        //单击获取点击的经纬度
+        var lat,lng;
+        //设置点击事件
+        var ClickHandler = function(e){
+            lng = e.point.lng;
+            lat = e.point.lat;
+
+            $.ajax({
+                type: "post",
+                url: baseUrl+"poi/create",
+                dataType: "json",
+                data: {
+                    "title":$("#event").val(),
+                    "address":$("#address").val(),
+                    "tags":$("#classification").val(),
+                    "latitude":lat,
+                    "longitude":lng,
+                    "thumb_up":0,
+                    "coord_type":3,
+                    "geotable_id":BDLBStableId,
+                    "ak":akServer},
+                //如果成功通过lbs云存储数据
+                success: function (data)
+                {
+                    var pt = new BMap.Point(lng,lat);
+                    var myIcon = new BMap.Icon("img/placeiconblue.png", new BMap.Size(32,32));
+                    var marker = new BMap.Marker(pt,{icon:myIcon});  // 创建标注，使用自定义图标
+
+                    map.addOverlay(marker);	// 将标注添加到地图中
+                    AddClickEvent(data.id,marker);	//给marker添加点击事件
+                    //var text="执行状态:"+data.status+";";
+                    //text+="结果："+data.message+";";
+                    //text+="新建数据ID是"+data.id;
+                    //$("#AddPointContainer").html(text);
+                    alert("添加成功！");
+                },
+                error: function(e) {
+                    console.log(e);
+                }
+            });
+            //点了一次之后移除点击事件
+            map.removeEventListener("click", ClickHandler);
+        }
+
+        //添加设置好的点击事件给地图
+        map.addEventListener("click",ClickHandler);
+    }
+
+    //data.total：总共有几条结果
+    //data.size：返回的有几条结果（<=一页内能显示的数目）
+    //page_size：一页显示几条结果，默认10，范围0~200
+    //page_index：指定显示第几页，默认0，最大9; tag：事件的分类，字符串格式，用于筛选
+    function SearchPoints(page_index,tag)
+    {
+        $.ajax({
+            type: "get",
+            url: baseUrl+"poi/list",
+            dataType: "jsonp",
+            data: {
+                "tags":tag,
+                "page_index":page_index,
+                "page_size":200,
+                "geotable_id":BDLBStableId,
+                "ak": akServer
+            },
+            //如果成功通过lbs云获取数据
+            success: function (data) {
+                console.log(data);
+				/*	eval("data=" + data);*/
+                var text="执行状态:"+data.status+"<br/>";
+                text+="结果："+data.message+"<br/>";
+                text+="结果包含"+data.total+"个数据<br/>";
+                $("#showContainer").html(text);
+                var pois=data.pois;
+
+                var tablesHTML="<tr><td>ID</td><td>分类</td><td>地址</td><td>事件</td><td>创建时间</td><td>顶</td></tr>";
+                for(var i=0;i<data.size;i++){
+                    tablesHTML+="<tr><td>"+pois[i].id+"</td><td>"+pois[i].tags+"</td><td>"+pois[i].address+"</td><td>"+pois[i].title+"</td><td>"+pois[i].create_time+"</td><td>"+pois[i].thumb_up+"</td></tr>";
+                }
+                if(tag==''){
+                    titletag='所有类型'+'     (事件总数：' +data.total+')';
+                }
+                else{
+                    titletag=tag+'    (事件总数：' +data.total+')';
+                }
+                var d = dialog({
+                    title: titletag,
+                    content: tablesHTML,
+                    height:450
+                });
+                d.show();
+            }
+        });
+    }
+
+    //把所有数据都添加为地图上的Marker
+    function AddAllPoints()
+    {
+        $.ajax({
+            type: "get",
+            url: baseUrl+"poi/list",
+            dataType: "jsonp",
+            data: {
+                "page_index":0,
+                "page_size":200,
+                "geotable_id":BDLBStableId,
+                "ak": akServer
+            },
+            //如果成功通过lbs云获取数据
+            success: function (data) {
+                console.log(data);
+
+                var pois=data.pois;
+
+                for(var i=0;i<data.size;i++){
+                    var pt = new BMap.Point(pois[i].location[0],pois[i].location[1]);
+                    if(pois[i].thumb_up<10){
+                        var myIcon = new BMap.Icon("img/placeiconblue.png", new BMap.Size(32,32));
+                    }
+                    else{
+                        if(pois[i].thumb_up<30){
+                            var myIcon = new BMap.Icon("img/placeiconyellow.png", new BMap.Size(32,32));
+                        }
+                        else{
+                            var myIcon = new BMap.Icon("img/placeiconred.png", new BMap.Size(32,32));
+                        }
+                    }
+                    var marker = new BMap.Marker(pt,{icon:myIcon});  // 创建标注
+
+                    map.addOverlay(marker);	// 将标注添加到地图中
+                    AddClickEvent(pois[i].id,marker);	//给marker添加点击事件
+                }
+            }
+        });
+    }
+
+
+    //每次点击marker都重新加载信息窗口-->实现顶数可自动变化
+    function OpenNewSearchInfoWindow(id,marker)
+    {
+        $.ajax({
+            type: "get",
+            url: baseUrl+"poi/detail",
+            dataType: "jsonp",
+            data: {
+                "id":id,
+                "geotable_id":BDLBStableId,
+                "ak": akServer
+            },
+            success: function (data) {
+                var poi = data.poi;
+                var content = '<div style="width:290px;height:90px;margin:0;line-height:20px;overflow:auto"><strong>事件</strong>：'+poi.title +'<br/><strong>地址</strong>：'+poi.address + '<br/><button id="thumbUp" style="width:50px;height:20px;margin:5px;margin-left:110px;background-color:	#4169E1;color:white;border:none;border-radius:5px;box-shadow: 2px 2px 5px #888888;"onclick="SetThumbUp('+poi.id+','+poi.thumb_up+')">顶&nbsp;&nbsp;'+poi.thumb_up +'</button></div>';
+                // 创建信息窗口对象
+                var searchInfoWindow = new BMapLib.SearchInfoWindow(map,content, {
+                    title: poi.tags, //标题
+                    width: 290, //宽度
+                    height:90, //高度
+                    panel : "panel", //检索结果面板
+                    enableAutoPan : true, //自动平移
+                    enableSendToPhone: false, //是否显示发送到手机按钮  !!!待修改，true的话有点儿问题!!!
+                    searchTypes :[
+                        BMAPLIB_TAB_SEARCH,   //周边检索
+                        BMAPLIB_TAB_TO_HERE,  //到这里去
+                        BMAPLIB_TAB_FROM_HERE //从这里出发
+                    ]
+                });
+                //searchInfoWindow.setContent(content);
+                searchInfoWindow.open(marker);
+            }
+        });
+    }
+
+    //点击信息窗中的“顶”按钮时触发，顶数+1
+    function SetThumbUp(poiId,thumbUpNow)
+    {
+        $.ajax({
+            type: "post",
+            url: baseUrl+"poi/update",
+            dataType: "json",
+            data: {
+                "id":poiId,
+                "thumb_up":thumbUpNow+1,
+                "geotable_id":BDLBStableId,
+                "ak":akServer},
+            //如果成功通过lbs云存储数据
+            success: function (data)
+            {
+                alert("成功顶了一下");
+
+                var text="修改顶数：";
+                text+="执行状态:"+data.status+";";
+                text+="结果："+data.message+";";
+                $("#AddPointContainer").html(text);
+            },
+            error: function(e) {
+                console.log(e);
+            }
+        });
+    }
+
+    document.getElementById("open").onclick = function(){
+        AddAllPoints();
+    };
+    document.getElementById("open").click();
+    document.getElementById("close").onclick = function(){
+        map.clearOverlays();
+    };
+
+    //分类检索
+    function SearchData(){
+        SearchPoints(0,$("#selectcal").val())
+    }
+
+    function selectStartPoint() {
+        map.addEventListener("click",getPoint);
+    }
+
+    var tempgeoLocationPoint;//选择起始点
+    var locationPoint = geolocationPoint;//默认起始点（即定位点）
+    function getPoint(e){
+       tempgeoLocationPoint = new BMap.Point(e.point.lng,e.point.lat);
+        var mk = new BMap.Marker(tempgeoLocationPoint);
+        map.addOverlay(mk);
+    }
+
+    function SearchSaptialData() {
+        var searchRadius = $("#radius").val();
+
+        map.removeEventListener("click",getPoint);
+
+        if(tempgeoLocationPoint != null){
+            locationPoint = tempgeoLocationPoint;
+		}
+        $.ajax({
+            type: "get",
+            url: baseSearchUrl + "nearby",
+            dataType: "jsonp",
+            data: {
+                "geotable_id": BDLBStableId,
+                "ak": akServer,
+                "location": locationPoint.lng.toString() + "," + locationPoint.lat.toString(),
+                "tags":$("#selectca2").val(),
+                "Coord_type": 3,
+                "radius": searchRadius
+            },
+            //如果成功通过lbs云获取数据
+            success: function (data) {
+                console.log(data);
+
+                //清除已经现实的标记点
+                map.clearOverlays();
+                //获取兴趣点
+                var pois = data.contents;
+                for (var i = 0; i < data.size; i++) {
+                    var pt = new BMap.Point(pois[i].location[0], pois[i].location[1]);
+                    //为事件点按顶的数目进行分类标注
+                    if (pois[i].thumb_up < 10) {
+                        var myIcon = new BMap.Icon("img/placeiconblue.png", new BMap.Size(32, 32));
+                    }
+                    else {
+                        if (pois[i].thumb_up < 30) {
+                            var myIcon = new BMap.Icon("img/placeiconyellow.png", new BMap.Size(32, 32));
+                        }
+                        else {
+                            var myIcon = new BMap.Icon("img/placeiconred.png", new BMap.Size(32, 32));
+                        }
+                    }
+                    var marker = new BMap.Marker(pt, {icon: myIcon});  // 创建标注
+                    map.addOverlay(marker);	// 将标注添加到地图中
+
+                    AddClickEvent(pois[i].uid,marker);	//给marker添加点击事件
+                }
+
+                var mk = new BMap.Marker(locationPoint);
+                map.addOverlay(mk);
+                //绘制查询圆图像
+                var circle = new BMap.Circle(locationPoint, searchRadius, {
+                    fillColor: "blue",
+                    strokeWeight: 1, fillOpacity: 0.3, strokeOpacity: 0.3
+                });
+                map.addOverlay(circle);
+            }
+
+        })
+    }
+
+    //清除空间查询点击反馈函数
+    function ClearSearchData() {
+        map.clearOverlays();
+        AddAllPoints();
+        var mk = new BMap.Marker(geolocationPoint);
+        map.addOverlay(mk);
+        locationPoint = geolocationPoint;
+        tempgeoLocationPoint = null;
+    }
+
+
+
+    //导航路径规划相关变量
+    var turnOnDrivingPlan = false;
+    var passPoint = []; //存储需要前往的事件点
+    var DrivingPoint = [];//储存离你定位点由远及近的事件点
+    var m = 0;
+    //给marker添加点击事件
+	//涉及的是标记点显示，以及添加需要前往点
+    function AddClickEvent(id,marker)
+    {
+        marker.addEventListener("click",function(e){
+            if(!(turnOnDrivingPlan))
+                OpenNewSearchInfoWindow(id,marker);
+            if(turnOnDrivingPlan){
+                AddDrivingPoint(m,id);
+                m++;
+            }
+        });
+    }
+
+    //选择前往事件点点击函数
+    function selectPoint() {
+        turnOnDrivingPlan = true;
+        map.removeEventListener("click",getPoint);
+    }
+
+    //清除导航路径点击函数
+    function ClearRoute() {
+        turnOnDrivingPlan = false;
+        map.clearOverlays();
+        AddAllPoints();
+        $("#r-result").empty();
+        var mk = new BMap.Marker(geolocationPoint);
+        map.addOverlay(mk);
+        locationPoint = geolocationPoint;
+        tempgeoLocationPoint = null;
+        DrivingPoint = [];
+        passPoint = [];
+    }
+
+    //添加需要经过点函数
+    function AddDrivingPoint(i,id) {
+
+        $.ajax({
+            type: "get",
+            url: baseUrl + "poi/detail",
+            dataType: "jsonp",
+            data: {
+                "id": id,
+                "geotable_id": BDLBStableId,
+                "ak": akServer
+            },
+			//如果成功通过lbs云获取数据
+            success: function (data) {
+                var poi = data.poi;
+                passPoint.push(new BMap.Point(poi.location[0],poi.location[1]));
+            }
+        })
+    }
+
+	//新建一个地图导航
+    var driving = new BMap.DrivingRoute(map);
+
+    //规划经过事件点的导航路径
+    function PlanRoute() {
+
+        var num = passPoint.length;
+        if(tempgeoLocationPoint != null){
+            locationPoint = tempgeoLocationPoint;
+		}
+        findNearestPoint(locationPoint);
+        for (var i = 1; i < num; i++) {
+            findNearestPoint(new BMap.Point(DrivingPoint[DrivingPoint.length - 1].lng,DrivingPoint[DrivingPoint.length - 1].lat));
+        }
+
+        var tempPoint = new BMap.Point(DrivingPoint[0].lng,DrivingPoint[0].lat);
+        driving.search(locationPoint, tempPoint);
+
+        for (var i = 1; i < DrivingPoint.length; i++) {
+            var point1 = new BMap.Point(DrivingPoint[i-1].lng,DrivingPoint[i-1].lat);
+            var point2 = new BMap.Point(DrivingPoint[i].lng,DrivingPoint[i].lat);
+            driving.search(point1,point2);
+        }
+    }
+
+    //当导航路径规划完成，在网页中显示导航路径以及绘制导航路径
+    var s = [];
+    driving.setSearchCompleteCallback(function () {
+        //获得第一条导航路径
+        var temp = driving.getResults().getPlan(0);
+        var route = temp.getRoute(0);
+
+        //得到导航路径文字信息
+        for (var i = 0; i < route.getNumSteps(); i++){
+            var step = route.getStep(i);
+            s.push((i + 1) + ". " + step.getDescription());
+        }
+        document.getElementById("r-result").innerHTML = s.join("<br/>");
+		//获得一系列点的数组
+        var pts = route.getPath();
+		//绘制这一系列点的导航路径
+        var polyline = new BMap.Polyline(pts);
+
+        map.addOverlay(polyline);
+        var mk = new BMap.Marker(locationPoint);
+        map.addOverlay(mk);
+    });
+
+    //在多个点是规划由远及近的事件点路径
+    function  findNearestPoint(Point) {
+        var i=0,t=0;
+        var temppoint =new  BMap.Point(passPoint[0].lng,passPoint[0].lat);
+        var distance = map.getDistance(Point,temppoint);
+        for(var i=1; i<passPoint.length;i++){
+            var tempdistance =map.getDistance(Point, new BMap.Point(passPoint[i].lng,passPoint[i].lat));
+            if(distance > tempdistance){
+                distance = tempdistance;
+                t = i;
+            }
+        }
+        DrivingPoint.push(new BMap.Point(passPoint[t].lng,passPoint[t].lat));
+        passPoint.splice(t,1);
+    }
+
+	//热力图显示
+    heatmapOverlay = new BMapLib.HeatmapOverlay({"radius":80,"visible":true});
+    if(!isSupportCanvas()){
+        alert('热力图目前只支持有canvas支持的浏览器,您所使用的浏览器不能使用热力图功能~')
+    }
+    //详细的参数,可以查看heatmap.js的文档 https://github.com/pa7/heatmap.js/blob/master/README.md
+    //参数说明如下:
+	/* visible 热力图是否显示,默认为true
+	 * opacity 热力的透明度,1-100
+	 * radius 势力图的每个点的半径大小
+	 * gradient  {JSON} 热力图的渐变区间 . gradient如下所示
+	 *	{
+	 .2:'rgb(0, 255, 255)',
+	 .5:'rgb(0, 110, 255)',
+	 .8:'rgb(100, 0, 255)'
+	 }
+	 其中 key 表示插值的位置, 0~1.
+	 value 为颜色值.
+	 */
+
+    //判断浏览区是否支持canvas
+    function isSupportCanvas(){
+        var elem = document.createElement('canvas');
+        return !!(elem.getContext && elem.getContext('2d'));
+    }
+
+
+
+    var datapoints = [];
+    //加载需要在热力图上显示的数据
+	function loadData() {
+
+        $.ajax({
+            type: "get",
+            url: baseUrl+"poi/list",
+            dataType: "jsonp",
+            data: {
+                "page_index":0,
+                "page_size":200,
+                "tags":$("#selectca3").val(),
+                "geotable_id":BDLBStableId,
+                "ak": akServer
+            },
+            //如果成功通过lbs云获取数据
+
+            success: function (data) {
+                console.log(data);
+                var pois=data.pois;
+
+               for( i=0;i<data.size;i++){
+				var pointdata = {};
+				pointdata["lng"] = pois[i].location[0];
+				pointdata["lat"] = pois[i].location[1];
+				pointdata["count"] = pois[i].thumb_up;
+				datapoints.push(pointdata);
+               }
+    }})
+    }
+
+    //在map中添加热力图图层
+
+    loadData();
+    //是否显示热力图
+    function openHeatmap(){
+        map.addOverlay(heatmapOverlay);
+	   loadData();
+        heatmapOverlay.setDataSet({data:datapoints,max:40});
+       // alert(datapoints[0].lng);
+        heatmapOverlay.show();
+    }
+
+
+    function closeHeatmap(){
+        heatmapOverlay.hide();
+        datapoints = [];
+    }
+    closeHeatmap();
+
+    function setGradient(){
+        var gradient = {};
+        var colors = document.querySelectorAll("input[type='color']");
+        colors = [].slice.call(colors,0);
+        colors.forEach(function(ele){
+            gradient[ele.getAttribute("data-key")] = ele.value;
+        });
+        heatmapOverlay.setOptions({"radius":10,"gradient":gradient});
+    }
+	</script>
+</body>
+</html>
